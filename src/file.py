@@ -34,62 +34,51 @@ class FileObject:
     def Path(self, v): self.__path = v
     @property
     def Encoding(self): return self.__enc
-    @Path.setter
+    @Encoding.setter
     def Encoding(self, v): self.__enc = v
     @property
     def Exist(self): return os.path.exists(self.Path)
 
 #open mode = r, r+, w, a, x
-#metaclass=ABCMeta
 class File(FileObject, metaclass=ABCMeta):
     @property
     def Exist(self): return os.path.isfile(self.Path)
     @abstractmethod
-    def read(): pass
+    def read(self): pass
     @abstractmethod
-    def write(content):
+    def write(self, content):
         # 途中までのディレクトリを生成する
         parent = pathlib.Path(self.Path).parent
         if not parent.is_dir(): parent.mkdir(parents=True)
-class File(FileObject):
-    @property
-    def Exist(self): return os.path.isfile(self.Path)
-    def read():
-        with open(path, mode='r', encoding=self.Encoding) as f:
-            return f.read().rstrip('\n')
-    def write(content): # 途中までのディレクトリも生成する。os.path.makedir()
-        super().write(content)
-        with open(path, mode='w', encoding=self.Encoding) as f:
-            f.write(v)
 class BinaryFile(File):
-    def read():
+    def read(self):
         with open(path, mode='rb', encoding=self.Encoding) as f: return f.read()
-    def write(content):
+    def write(self, content):
         super().write(content)
         with open(path, mode='wb', encoding=self.Encoding) as f: f.write(v)
 class TextFile(File):
-    def read():
-        with open(path, mode='r', encoding=self.Encoding) as f:
+    def read(self):
+        with open(self.Path, mode='r', encoding=self.Encoding) as f:
             return f.read().rstrip('\n')
-    def write(content):
+    def write(self, content):
         super().write(content)
         with open(path, mode='w', encoding=self.Encoding) as f:
             f.write(v)
 class LineTextFile(File):
-    def read():
+    def read(self):
         with open(path, mode='r', encoding=self.Encoding) as f:
             return f.readlines()
-    def write(content):
+    def write(self, content):
         super().write(content)
         with open(path, mode='w', encoding=self.Encoding) as f:
             f.write('\n'.join(v))
-    def append(content):
+    def append(self, content):
         super().write(content)
         with open(path, mode='a', encoding=self.Encoding) as f:
             f.write('\n'.join(v))
 #        parent = pathlib.Path(self.Path).parent
 #        if not parent.is_dir(): raise FileNotFoundError(f'{self.Path}が存在しません。')
-    def insert(content, line_no=0):
+    def insert(self, content, line_no=0):
         super().write(content)
         with open(path, mode='r', encoding=self.Encoding) as f:
             l = f.readlines()
@@ -111,25 +100,28 @@ class CsvFile(File):
     def Types(self): return self.__types
     @Names.setter
     def Types(self, v): self.__types = v
-    def read():
+    def read(self):
         pass
-    def write(content):
+    def write(self, content):
         super().write(content)
 class TsvFile(File):
-    def read():
+    def read(self):
         pass
-    def write(content):
+    def write(self, content):
         super().write(content)
 class JsonFile(File):
-    def read():
+    def read(self):
         pass
-    def write(content):
+    def write(self, content):
         super().write(content)
     
 class Directory(FileObject):
     @property
     def Exist(self): return os.path.isdir(self.Path)
-    pass
+    def make(self):
+        this = pathlib.Path(self.Path)
+        if not this.is_dir(): parent.mkdir(parents=True)
+
 
 class Link(FileObject):
     pass
