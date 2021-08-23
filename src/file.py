@@ -76,7 +76,7 @@ class TextFile(File):
 class LineTextFile(File):
     def read(self):
         with open(self.Path, mode='r', encoding=self.Encoding) as f:
-            return f.readlines()
+            return [l.rstrip('\n') for l in f.readlines()]
     def write(self, content):
         super().write(content)
         with open(self.Path, mode='w', encoding=self.Encoding) as f:
@@ -85,19 +85,12 @@ class LineTextFile(File):
         super().write(content)
         with open(self.Path, mode='a', encoding=self.Encoding) as f:
             f.write('\n'.join(content))
-#        parent = pathlib.Path(self.Path).parent
-#        if not parent.is_dir(): raise FileNotFoundError(f'{self.Path}が存在しません。')
     def insert(self, content, line_no=0):
         super().write(content)
-        with open(self.Path, mode='r', encoding=self.Encoding) as f:
-            l = f.readlines()
+        l = self.read()
         l[line_no:line_no] = content
-#        for c in content.reverse():
-#            l.insert(line_no, c)
         with open(self.Path, mode='w', encoding=self.Encoding) as f:
-            f.writelines(l)
-#        parent = pathlib.Path(self.Path).parent
-#        if not parent.is_dir(): raise FileNotFoundError(f'{self.Path}が存在しません。')
+            f.writelines([line+'\n' for line in l])
 class CsvFile(File):
     @property
     def Exist(self): return os.path.exists()
