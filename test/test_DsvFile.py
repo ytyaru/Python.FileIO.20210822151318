@@ -66,7 +66,6 @@ Tanaka	35''')
         self.assertEqual(f.Names, [])
         self.assertEqual(f.Types, [])
         self.assertEqual(list(actual), [['Yamada','10'],['Suzuki','22'],['Tanaka','35']])
-    """
     def test_read_has_names(self):
         p = pathlib.Path('/tmp/a.tsv')
         p.write_text('''name	age
@@ -90,6 +89,7 @@ Tanaka	35''')
         self.assertEqual(f.Names, ['name', 'age'])
         self.assertEqual(f.Types, ['str', 'int'])
         self.assertEqual(list(actual), [['Yamada','10'],['Suzuki','22'],['Tanaka','35']])
+    """
     """
 
 

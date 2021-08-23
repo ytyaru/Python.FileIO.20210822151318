@@ -98,7 +98,7 @@ class DsvFile(File):
         self.__header_line_num = header_line_num
         self.__names = []
         self.__types = []
-        print(self.__header_line_num)
+        print(f'INI:{self.__header_line_num}')
     @property
     def Delimiter(self): return self.__delimiter
     @property
@@ -114,12 +114,14 @@ class DsvFile(File):
     def read(self):
         with open(self.Path, mode='r', encoding=self.Encoding) as f:
             reader = csv.reader(f, delimiter=self.Delimiter)
-            print(self.__header_line_num)
+            print(f'R1:{self.__header_line_num}')
             if 0 < self.__header_line_num: self.Names = next(reader)
             if 1 < self.__header_line_num: self.Types = next(reader)
+            print(f'R2:{self.__header_line_num} {self.Names} {self.Types}')
 #            if 0 < self.__header_line_num: self.Names = list(next(reader))
 #            if 1 < self.__header_line_num: self.Types = list(next(reader))
-            for row in reader: yield row
+            return list(reader)
+#            for row in reader: yield row
 #            return list(rows)
     def read_to_namedtuple(self):
         with open(self.Path, mode='r', encoding=self.Encoding) as f:
