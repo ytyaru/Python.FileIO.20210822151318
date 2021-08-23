@@ -91,9 +91,16 @@ class LineTextFile(File):
         l[line_no:line_no] = content
         with open(self.Path, mode='w', encoding=self.Encoding) as f:
             f.writelines([line+'\n' for line in l])
-class CsvFile(File):
+class DsvFile(File):
+    def __init__(self, path, delimiter, header_line_num=0):
+        super().__init__(path)
+        self.__delimiter = delimiter
+        self.__header_line_num = header_line_num
+        self.__names = []
+        self.__types = []
+        print(self.__header_line_num)
     @property
-    def Exist(self): return os.path.exists()
+    def Delimiter(self): return self.__delimiter
     @property
     def Names(self): return self.__names
     @Names.setter
@@ -102,6 +109,50 @@ class CsvFile(File):
     def Types(self): return self.__types
     @Names.setter
     def Types(self, v): self.__types = v
+    @property
+    def RowType(self): return self.__row_type
+    def read(self):
+        with open(self.Path, mode='r', encoding=self.Encoding) as f:
+            reader = csv.reader(f, delimiter=self.Delimiter)
+            print(self.__header_line_num)
+            if 0 < self.__header_line_num: self.Names = next(reader)
+            if 1 < self.__header_line_num: self.Types = next(reader)
+#            if 0 < self.__header_line_num: self.Names = list(next(reader))
+#            if 1 < self.__header_line_num: self.Types = list(next(reader))
+            for row in reader: yield row
+#            return list(rows)
+    def read_to_namedtuple(self):
+        with open(self.Path, mode='r', encoding=self.Encoding) as f:
+            reader = csv.reader(f, delimiter=self.Delimiter)
+            if 0 < self.__header_line_num: self.Names = next(reader)
+            if 1 < self.__header_line_num: self.Types = next(reader)
+            if not self.Names: return None
+            self.__row_type = T = namedtuple('CsvRow', ' '.join(self.Names))
+            for row in rows:
+                yield [T(*c) for c in row]
+    def read_to_named_and_typed(self):
+        with open(self.Path, mode='r', encoding=self.Encoding) as f:
+            reader = csv.reader(f, delimiter=self.Delimiter)
+            if 0 < self.__header_line_num: self.Names = next(reader)
+            if 1 < self.__header_line_num: self.Types = next(reader)
+            if not self.Names: return None
+            self.__row_type = T = namedtuple('CsvRow', ' '.join(self.Names))
+            for row in rows:
+                for i, c in enumerate(row):
+                    values = [eval(f'{self.Types[i]}("{c}")') for i,c in enumerate(row)]
+                    yield T(*values)
+    def read_to_dictlist(self):
+        rows = self.read()
+        if not self.Names: return rows
+        dl = []
+        for r in rows:
+            dl.append(dict([(self.Names[i], c) for i,c in enumerate(r)]))
+        return dl
+    def write(self, content):
+        super().write(content)
+        rows = csv.write(delimiter=self.Delimiter)
+
+class CsvFile(File):
     def read(self):
         pass
     def write(self, content):
