@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # coding: utf8
-import os, sys, csv, json, datetime, locale
+import os, sys, pathlib, csv, json, datetime, locale
 from abc import ABCMeta, abstractmethod
 from string import Template
 from collections import namedtuple
@@ -52,40 +52,49 @@ class File(FileObject, metaclass=ABCMeta):
         if not parent.is_dir(): parent.mkdir(parents=True)
 class BinaryFile(File):
     def read(self):
-        with open(path, mode='rb', encoding=self.Encoding) as f: return f.read()
+        with open(self.Path, mode='rb') as f: return f.read()
     def write(self, content):
         super().write(content)
-        with open(path, mode='wb', encoding=self.Encoding) as f: f.write(v)
+        with open(self.Path, mode='wb') as f: f.write(content)
+    def over_write(self, content, pos=0):
+        super().write(content)
+        with open(self.Path, mode='r+') as f:
+            f.seek(pos)
+            f.write(content)
 class TextFile(File):
     def read(self):
         with open(self.Path, mode='r', encoding=self.Encoding) as f:
             return f.read().rstrip('\n')
     def write(self, content):
         super().write(content)
-        with open(path, mode='w', encoding=self.Encoding) as f:
-            f.write(v)
+        with open(self.Path, mode='w', encoding=self.Encoding) as f:
+            f.write(content)
+    def append(self, content):
+        super().write(content)
+        with open(self.Path, mode='a', encoding=self.Encoding) as f:
+            f.write('\n'.join(content))
 class LineTextFile(File):
     def read(self):
-        with open(path, mode='r', encoding=self.Encoding) as f:
+        with open(self.Path, mode='r', encoding=self.Encoding) as f:
             return f.readlines()
     def write(self, content):
         super().write(content)
-        with open(path, mode='w', encoding=self.Encoding) as f:
-            f.write('\n'.join(v))
+        with open(self.Path, mode='w', encoding=self.Encoding) as f:
+            f.write('\n'.join(content))
     def append(self, content):
         super().write(content)
-        with open(path, mode='a', encoding=self.Encoding) as f:
-            f.write('\n'.join(v))
+        with open(self.Path, mode='a', encoding=self.Encoding) as f:
+            f.write('\n'.join(content))
 #        parent = pathlib.Path(self.Path).parent
 #        if not parent.is_dir(): raise FileNotFoundError(f'{self.Path}が存在しません。')
     def insert(self, content, line_no=0):
         super().write(content)
-        with open(path, mode='r', encoding=self.Encoding) as f:
+        with open(self.Path, mode='r', encoding=self.Encoding) as f:
             l = f.readlines()
         l[line_no:line_no] = content
 #        for c in content.reverse():
 #            l.insert(line_no, c)
-        with open(path, mode='w', encoding=self.Encoding) as f:
+        with open(self.Path, mode='w', encoding=self.Encoding) as f:
             f.writelines(l)
 #        parent = pathlib.Path(self.Path).parent
 #        if not parent.is_dir(): raise FileNotFoundError(f'{self.Path}が存在しません。')
