@@ -103,7 +103,6 @@ class DsvFile(File):
         self.__header_line_num = header_line_num
         self.__names = []
         self.__types = []
-        print(f'INI:{self.__header_line_num}')
     @property
     def Delimiter(self): return self.__delimiter
     @property
@@ -123,19 +122,14 @@ class DsvFile(File):
         return reader
     def __cast(self, i, c): return eval(f'{self.Types[i]}("{c}")', globals(), locals())
     def read(self):
-        with open(self.Path, mode='r', encoding=self.Encoding, newline='') as f: # # https://docs.python.org/ja/3/library/csv.html#id3
+        with open(self.Path, mode='r', encoding=self.Encoding, newline='') as f:# https://docs.python.org/ja/3/library/csv.html#id3
             reader = self.__read_header(f)
-            print(f'R2:{self.__header_line_num} {self.Names} {self.Types}')
             if not self.Names: return list(reader)
             self.__row_type = T = namedtuple('Row', ' '.join(self.Names))
-            print(T, self.Names)
             rows = []
             for row in reader:
-                if not self.Types:
-                    rows.append(T(*row))
-                else:
-                    rows.append(T(*[self.__cast(i,c) for i,c in enumerate(row)]))
-#                    rows.append(T(*[eval(f'{self.Types[i]}("{c}")', globals(), locals()) for i,c in enumerate(row)]))
+                if self.Types: rows.append(T(*[self.__cast(i,c) for i,c in enumerate(row)]))
+                else: rows.append(T(*row))
             return rows
     def select(self, *args, **kwargs):
         with open(self.Path, mode='r', encoding=self.Encoding, newline='') as f:
@@ -151,37 +145,20 @@ class DsvFile(File):
                     if all([row[i] == a[i] for i,a in enumerate(args)]):
                         selecteds.append(row)
             return selecteds
-    """
-    def read(self):
-        with open(self.Path, mode='r', encoding=self.Encoding, newline='') as f:
-            reader = csv.reader(f, delimiter=self.Delimiter)
-            if 0 < self.__header_line_num: self.Names = next(reader)
-            if 1 < self.__header_line_num: self.Types = next(reader)
-            print(f'R2:{self.__header_line_num} {self.Names} {self.Types}')
+    def read_to_list(self):
+        with open(self.Path, mode='r', encoding=self.Encoding, newline='') as f:# https://docs.python.org/ja/3/library/csv.html#id3
+            reader = self.__read_header(f)
             return list(reader)
-#            for row in reader: yield row
-#            return list(rows)
-    """
     def read_to_namedtuple(self):
+        if self.__header_line_num < 1: raise ValueError('header_line_numが1より小さいです。1以上にしてください。')
+        l = []
         with open(self.Path, mode='r', encoding=self.Encoding, newline='') as f:
-            reader = csv.reader(f, delimiter=self.Delimiter)
-            if 0 < self.__header_line_num: self.Names = next(reader)
-            if 1 < self.__header_line_num: self.Types = next(reader)
-            if not self.Names: return None
-            self.__row_type = T = namedtuple('CsvRow', ' '.join(self.Names))
-            for row in rows:
-                yield [T(*c) for c in row]
-    def read_to_named_and_typed(self):
-        with open(self.Path, mode='r', encoding=self.Encoding, newline='') as f:
-            reader = csv.reader(f, delimiter=self.Delimiter)
-            if 0 < self.__header_line_num: self.Names = next(reader)
-            if 1 < self.__header_line_num: self.Types = next(reader)
-            if not self.Names: return None
-            self.__row_type = T = namedtuple('CsvRow', ' '.join(self.Names))
-            for row in rows:
-                for i, c in enumerate(row):
-                    values = [eval(f'{self.Types[i]}("{c}")') for i,c in enumerate(row)]
-                    yield T(*values)
+            reader = self.__read_header(f)
+            self.__row_type = T = namedtuple('Row', ' '.join(self.Names))
+            for row in reader:
+                if self.Types: l.append(T(*[self.__cast(i,c) for i,c in enumerate(row)]))
+                else: l.append(T(*row))
+        return l
     def read_to_dictlist(self):
         if self.__header_line_num < 1: raise ValueError('header_line_numが1より小さいです。1以上にしてください。')
         dl = []
