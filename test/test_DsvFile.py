@@ -17,6 +17,12 @@ class TestDsvFile(unittest.TestCase):
                 f = DsvFile('a.txt', d)
                 self.assertEqual(f.Delimiter, d)
 
+    def test_read_0(self):
+        p = pathlib.Path('/tmp/a.tsv')
+        p.write_text('')
+        f = DsvFile(p, '	')
+        actual = f.read()
+        self.assertEqual(list(actual), [])
     def test_read_1(self):
         p = pathlib.Path('/tmp/a.tsv')
         p.write_text('''Yamada	10''')
@@ -82,7 +88,6 @@ Tanaka	35''')
         self.assertEqual(f.Names, ['name', 'age'])
         self.assertEqual(f.Types, [])
         self.assertEqual(list(actual), expected)
-#        self.assertEqual(list(actual), [['Yamada','10'],['Suzuki','22'],['Tanaka','35']])
     def test_read_has_names_and_types(self):
         p = pathlib.Path('/tmp/a.tsv')
         p.write_text('''name	age
@@ -100,9 +105,39 @@ Tanaka	35''')
         self.assertEqual(f.Names, ['name', 'age'])
         self.assertEqual(f.Types, ['str', 'int'])
         self.assertEqual(list(actual), expected)
-#        self.assertEqual(list(actual), [['Yamada','10'],['Suzuki','22'],['Tanaka','35']])
-    """
-    """
+        self.assertEqual(type(list(actual)[0].name), str)
+        self.assertEqual(type(list(actual)[0].age), int)
+
+    def test_read_to_dictlist_has_not_name(self):
+        p = pathlib.Path('/tmp/a.tsv')
+        p.write_text('''Yamada	10''')
+        f = DsvFile(p, '	')
+        with self.assertRaises(ValueError, msg='header_line_numが1より小さいです。1以上にしてください。'):
+            actual = f.read_to_dictlist()
+    def test_read_to_dictlist_0(self):
+        p = pathlib.Path('/tmp/a.tsv')
+        p.write_text('''name	age''')
+        f = DsvFile(p, '	', header_line_num=1)
+        actual = f.read_to_dictlist()
+        self.assertEqual(f.Names, ['name','age'])
+        self.assertEqual(list(actual), [])
+    def test_read_to_dictlist_1(self):
+        p = pathlib.Path('/tmp/a.tsv')
+        p.write_text('''name	age
+Yamada	10''')
+        f = DsvFile(p, '	', header_line_num=1)
+        actual = f.read_to_dictlist()
+        self.assertEqual(f.Names, ['name','age'])
+        self.assertEqual(list(actual), [{'name': 'Yamada', 'age': '10'}])
+    def test_read_to_dictlist_1_typed(self):
+        p = pathlib.Path('/tmp/a.tsv')
+        p.write_text('''name	age
+str	int
+Yamada	10''')
+        f = DsvFile(p, '	', header_line_num=2)
+        actual = f.read_to_dictlist()
+        self.assertEqual(f.Names, ['name','age'])
+        self.assertEqual(list(actual), [{'name': 'Yamada', 'age': 10}])
 
 
 

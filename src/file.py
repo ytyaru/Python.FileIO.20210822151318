@@ -4,6 +4,11 @@ import os, sys, pathlib, csv, json, datetime, locale
 from abc import ABCMeta, abstractmethod
 from string import Template
 from collections import namedtuple
+# 以下CSVのヘッダで使う型
+from decimal import Decimal
+from datetime import datetime, date, time, timedelta, tzinfo, timezone
+from urllib.parse import urlparse as url
+from pathlib import Path as path
 """
 class FileReader:
     @classmethod
@@ -116,10 +121,9 @@ class DsvFile(File):
         if 0 < self.__header_line_num: self.Names = next(reader)
         if 1 < self.__header_line_num: self.Types = next(reader)
         return reader
-#    def __read_rows(self, reader): return list(reader)
-##            return list(rows)
+    def __cast(self, i, c): return eval(f'{self.Types[i]}("{c}")', globals(), locals())
     def read(self):
-        with open(self.Path, mode='r', encoding=self.Encoding) as f:
+        with open(self.Path, mode='r', encoding=self.Encoding, newline='') as f: # # https://docs.python.org/ja/3/library/csv.html#id3
             reader = self.__read_header(f)
             print(f'R2:{self.__header_line_num} {self.Names} {self.Types}')
             if not self.Names: return list(reader)
@@ -129,14 +133,12 @@ class DsvFile(File):
             for row in reader:
                 if not self.Types:
                     rows.append(T(*row))
-                    continue
                 else:
-                    rows.append(T(*[eval(f'{self.Types[i]}("{c}")') for i,c in enumerate(row)]))
-#                for i, c in enumerate(row):
-#                    rows.append(T(*[eval(f'{self.Types[i]}("{c}")') for i,c in enumerate(row)]))
+                    rows.append(T(*[self.__cast(i,c) for i,c in enumerate(row)]))
+#                    rows.append(T(*[eval(f'{self.Types[i]}("{c}")', globals(), locals()) for i,c in enumerate(row)]))
             return rows
     def select(self, *args, **kwargs):
-        with open(self.Path, mode='r', encoding=self.Encoding) as f:
+        with open(self.Path, mode='r', encoding=self.Encoding, newline='') as f:
             reader = self.__read_header(f)
             if self.Names: self.__row_type = T = namedtuple('CsvRow', ' '.join(self.Names))
             selecteds = []
@@ -151,7 +153,7 @@ class DsvFile(File):
             return selecteds
     """
     def read(self):
-        with open(self.Path, mode='r', encoding=self.Encoding) as f:
+        with open(self.Path, mode='r', encoding=self.Encoding, newline='') as f:
             reader = csv.reader(f, delimiter=self.Delimiter)
             if 0 < self.__header_line_num: self.Names = next(reader)
             if 1 < self.__header_line_num: self.Types = next(reader)
@@ -161,7 +163,7 @@ class DsvFile(File):
 #            return list(rows)
     """
     def read_to_namedtuple(self):
-        with open(self.Path, mode='r', encoding=self.Encoding) as f:
+        with open(self.Path, mode='r', encoding=self.Encoding, newline='') as f:
             reader = csv.reader(f, delimiter=self.Delimiter)
             if 0 < self.__header_line_num: self.Names = next(reader)
             if 1 < self.__header_line_num: self.Types = next(reader)
@@ -170,7 +172,7 @@ class DsvFile(File):
             for row in rows:
                 yield [T(*c) for c in row]
     def read_to_named_and_typed(self):
-        with open(self.Path, mode='r', encoding=self.Encoding) as f:
+        with open(self.Path, mode='r', encoding=self.Encoding, newline='') as f:
             reader = csv.reader(f, delimiter=self.Delimiter)
             if 0 < self.__header_line_num: self.Names = next(reader)
             if 1 < self.__header_line_num: self.Types = next(reader)
@@ -181,11 +183,21 @@ class DsvFile(File):
                     values = [eval(f'{self.Types[i]}("{c}")') for i,c in enumerate(row)]
                     yield T(*values)
     def read_to_dictlist(self):
-        rows = self.read()
-        if not self.Names: return rows
+        if self.__header_line_num < 1: raise ValueError('header_line_numが1より小さいです。1以上にしてください。')
+#        rows = self.read()
+#        if not self.Names: return rows
+#        print('*****************')
         dl = []
-        for r in rows:
-            dl.append(dict([(self.Names[i], c) for i,c in enumerate(r)]))
+        with open(self.Path, mode='r', encoding=self.Encoding, newline='') as f:
+            reader = self.__read_header(f)
+            for r in reader:
+                if not self.Types: dl.append(dict([(self.Names[i], c) for i,c in enumerate(r)]))
+                else: dl.append(dict([(self.Names[i], self.__cast(i,c)) for i,c in enumerate(r)]))
+#            dl.append(dict([(self.Names[i], c) for i,c in enumerate(r)]))
+#            if not self.Types: dl.append(T(*row))
+#            else: dl.append(T(*[self.__cast(i,c) for i,c in enumerate(row)]))
+            return dl                     
+
         return dl
     def write(self, content):
         super().write(content)
