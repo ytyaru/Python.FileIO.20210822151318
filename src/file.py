@@ -97,6 +97,7 @@ class LineTextFile(File):
         with open(self.Path, mode='w', encoding=self.Encoding) as f:
             f.writelines([line+'\n' for line in l])
 class DsvFile(File):
+
     def __init__(self, path, delimiter, header_line_num=0):
         super().__init__(path)
         self.__delimiter = delimiter
@@ -120,7 +121,16 @@ class DsvFile(File):
         if 0 < self.__header_line_num: self.Names = next(reader)
         if 1 < self.__header_line_num: self.Types = next(reader)
         return reader
-    def __cast(self, i, c): return eval(f'{self.Types[i]}("{c}")', globals(), locals())
+    def __cast(self, i, c):
+        return eval(f'{self.Types[i]}("{c}")', globals(), locals())
+    def __list_to_namedtuple(self, row):
+#        return self.RowType(*[self.__cast(i,c) for i,c in enumerate(row)]) if self.Types else self.RowType(*row)
+#        return self.RowType(*[self.__cast(i,c) for i,c in enumerate(row)]) if self.Types else self.RowType(*row) if self.Names else row
+        return self.RowType(*[self.__cast(i,c) for i,c in enumerate(row)]) \
+                if self.Types else self.RowType(*row) \
+                if self.Names else row
+#        return row if not self.Names else self.RowType(*row) if not self.Types else self.RowType(*[self.__cast(i,c) for i,c in enumerate(row)])
+#        return self.RowType(*[self.__cast(i,c) for i,c in enumerate(row)]) if self.Types else self.RowType(*row)
     def read(self):
         with open(self.Path, mode='r', encoding=self.Encoding, newline='') as f:# https://docs.python.org/ja/3/library/csv.html#id3
             reader = self.__read_header(f)
@@ -138,13 +148,10 @@ class DsvFile(File):
             selecteds = []
             for row in reader:
                 if self.Names:
-#                    r = T(*[self.__cast(i,c) for i,c in enumerate(row)]) if self.Types else rows.append(T(*row))
                     r = T(*[self.__cast(i,c) for i,c in enumerate(row)]) if self.Types else T(*row)
-#                    if all([getattr(r, k) == v for k,v in kwargs.items()]):
                     if all([v(getattr(r, k)) if callable(v) else getattr(r, k) == v for k,v in kwargs.items()]):
                         selecteds.append(r)
                 else:
-#                    if all([row[i] == a for i,a in enumerate(args)]):
                     if all([True if a is None else row[i] == a for i,a in enumerate(args)]):
                         selecteds.append(row)
             return selecteds
@@ -174,6 +181,91 @@ class DsvFile(File):
     def write(self, content):
         super().write(content)
         rows = csv.write(delimiter=self.Delimiter)
+
+class DsvFileReader(DsvFile):
+    @property
+    def RowType(self): return self.__row_type
+    def read_header(self, f):
+        with open(self.Path, mode='r', encoding=self.Encoding, newline='') as f:# https://docs.python.org/ja/3/library/csv.html#id3
+            reader = csv.reader(f, delimiter=self.Delimiter)
+            if 0 < self.__header_line_num:
+                self.Names = next(reader)
+                self.__row_type = T = namedtuple('Row', ' '.join(self.Names))
+#                self.RowType = namedtuple('Row', ' '.join(self.Names))
+            if 1 < self.__header_line_num:
+                self.Types = next(reader)
+            return reader
+    def cast(self, i, c):
+        return eval(f'{self.Types[i]}("{c}")', globals(), locals())
+
+class ListedDsvFile(DsvFileReader):
+    def read(self): return list(self.read_header())
+#        reader = self.read_header()
+#        return list(reader)
+    def read_to_list(self): return self.read()
+    def read_to_dict(self): return self.read()
+    def read_to_namedtuple(self): return self.read()
+class NamedDsvFile(DsvFileReader):
+    def read(self):
+        with open(self.Path, mode='r', encoding=self.Encoding, newline='') as f:# https://docs.python.org/ja/3/library/csv.html#id3
+            reader = self.read_header(f)
+#            self.__row_type = T = namedtuple('Row', ' '.join(self.Names))
+#            rows = []
+#            for row in reader: rows.append(T(*row))
+#            return rows
+#            return [T(*row) for row in reader]
+            return [self.RowType(*row) for row in reader]
+    def read_to_list(self): return list(self.read_header())
+    def read_to_dict(self):
+        return [dict([(self.Names[i], c) for i,c in enumerate(r)]) for r in self.read_header()]
+#        dl = []
+#        reader = self.read_header()
+#        for r in reader:
+#            dl.append(dict([(self.Names[i], self.__cast(i,c)) for i,c in enumerate(r)]))
+#        return dl
+    def read_to_namedtuple(self):
+        return [self.RowType(*r) for r in self.read_header()]
+#        return [T(*r) for r in self.read_header()]
+#        l = []
+#        reader = self.__read_header(f)
+#        self.__row_type = T = namedtuple('Row', ' '.join(self.Names))
+#        for row in reader:
+#            if self.Types: l.append(T(*[self.__cast(i,c) for i,c in enumerate(row)]))
+#            else: l.append(T(*row))
+#        return l
+
+class TypedDsvFile(DsvFileReader):
+    def read(self): return self.read_to_namedtuple()
+    def read_to_list(self): return list(self.read_header())
+    def read_to_dict(self):
+        return [dict([(self.Names[i], self.cast(i,c)) for i,c in enumerate(r)]) for r in self.read_header()]
+        """
+        dl = []
+        reader = self.read_header()
+        return [dict([(self.Names[i], self.cast(i,c)) for i,c in enumerate(r)]) for r in self.read_header()]
+#        return [dict([(self.Names[i], self.cast(i,c)) for i,c in enumerate(r)]) for r in reader]
+#        for r in reader:
+#            if not self.Types: dl.append(dict([(self.Names[i], c) for i,c in enumerate(r)]))
+#            else: dl.append(dict([(self.Names[i], self.__cast(i,c)) for i,c in enumerate(r)]))
+#        return dl                     
+        """
+    def read_to_namedtuple(self):
+        return [self.RowType(*[self.cast(i,c) for i,c in enumerate(row)]) for row in self.read_header()]
+        """
+        reader = self.read_header()
+        self.__row_type = T = namedtuple('Row', ' '.join(self.Names))
+        return [T(*[self.cast(i,c) for i,c in enumerate(row)]) for r in reader]
+                if self.Types: l.append(T(*[self.__cast(i,c) for i,c in enumerate(row)]))
+#        if self.__header_line_num < 1: raise ValueError('header_line_numが1より小さいです。1以上にしてください。')
+#        l = []
+#        with open(self.Path, mode='r', encoding=self.Encoding, newline='') as f:
+#            reader = self.__read_header(f)
+#            self.__row_type = T = namedtuple('Row', ' '.join(self.Names))
+#            for row in reader:
+#                if self.Types: l.append(T(*[self.__cast(i,c) for i,c in enumerate(row)]))
+#                else: l.append(T(*row))
+#        return l
+        """
 
 class CsvFile(DsvFile):
     def __init__(self, path, header_line_num=0):
