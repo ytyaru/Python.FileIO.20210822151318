@@ -425,24 +425,49 @@ Tanaka	35''')
         self.assertEqual(f.Names, ['name','age'])
         self.assertEqual(f.Types, ['str','int'])
         self.assertEqual(actual, [f.RowType('Suzuki', 22), f.RowType('Tanaka', 35)])
-
-
-
-
-    """
-    def test_select_0(self):
+    def test_select_typed_callable_str_int(self):
         p = pathlib.Path('/tmp/a.tsv')
         p.write_text('''name	age
 str	int
 Yamada	10
+Suzuki	3
 Suzuki	22
 Tanaka	35''')
         f = DsvFile(p, '	', header_line_num=2)
-        actual = f.select()
+        actual = f.select(name='Suzuki', age=lambda x: 22 <= x)
         self.assertEqual(f.Names, ['name','age'])
         self.assertEqual(f.Types, ['str','int'])
-        self.assertEqual(list(actual), [{'name': 'Yamada', 'age': 10},{'name': 'Suzuki', 'age': 22}])
-    """
+        self.assertEqual(actual, [f.RowType('Suzuki', 22)])
+
+    def test_write_from_list(self):
+        p = pathlib.Path('/tmp/a.tsv')
+        rows = [['Yamada', 10]]
+        f = DsvFile(p, '	')
+        f.write(rows)
+        self.assertEqual(f.read(), [['Yamada', '10']])
+    def test_write_from_namedtuple_named(self):
+        p = pathlib.Path('/tmp/a.tsv')
+        p.write_text('''name	age
+Yamada	10''')
+        f = DsvFile(p, '	', header_line_num=1)
+        rows = f.read()
+        self.assertEqual(f.read(), [f.RowType('Yamada', '10')])
+        rows.append(f.RowType('Kijima', '33'))
+        rows.append(f.RowType('Sasaki', '44'))
+        f.write(rows)
+        self.assertEqual(f.read(), [f.RowType('Yamada', '10'),f.RowType('Kijima', '33'),f.RowType('Sasaki', '44')])
+    def test_write_from_namedtuple_typed(self):
+        p = pathlib.Path('/tmp/a.tsv')
+        p.write_text('''name	age
+str	int
+Yamada	10''')
+        f = DsvFile(p, '	', header_line_num=2)
+        rows = f.read()
+        self.assertEqual(f.read(), [f.RowType('Yamada', 10)])
+        rows.append(f.RowType('Kijima', 33))
+        rows.append(f.RowType('Sasaki', 44))
+        f.write(rows)
+        self.assertEqual(f.read(), [f.RowType('Yamada', 10),f.RowType('Kijima', 33),f.RowType('Sasaki', 44)])
 
 if __name__ == "__main__":
     unittest.main()

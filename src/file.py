@@ -125,8 +125,9 @@ class DsvFile(File):
     def read_to_namedtuple(self):
         return self.__reader.read_to_namedtuple()
     def write(self, content):
-        super().write(content)
-        rows = csv.write(delimiter=self.Delimiter)
+        return self.__reader.write(content)
+#        super().write(content)
+#        rows = csv.write(delimiter=self.Delimiter)
 class DsvFileReader(File):
     def __init__(self, path, delimiter, header_line_num):
         super().__init__(path)
@@ -174,6 +175,14 @@ class ListedDsvFile(DsvFileReader):
                 if all([True if a is None else row[i] == a for i,a in enumerate(args)]):
                     selecteds.append(row)
             return selecteds
+    def write(self, rows):
+        if not isinstance(rows, list): raise ValueError('引数は二重配列にしてください。')
+        if isinstance(rows, list) < 1: raise ValueError('要素がありません。引数の配列に1つ以上要素を加えてください。')
+#        if len(rows[0]) != len(self.Names)):
+        if not isinstance(rows[0], list): raise ValueError('引数は二重配列にしてください。')
+        with open(self.Path, mode='w', encoding=self.Encoding, newline='') as f:
+            for row in rows:
+                f.write(f'{self.Delimiter.join([str(c) for c in row])}{os.linesep}')
 
 class NamedDsvFile(DsvFileReader):
     def __init__(self, path, delimiter, header_line_num):
@@ -199,6 +208,14 @@ class NamedDsvFile(DsvFileReader):
                 if all([v(getattr(r, k)) if callable(v) else getattr(r, k) == v for k,v in kwargs.items()]):
                     selecteds.append(r)
             return selecteds
+    def write(self, rows):
+        if not isinstance(rows, list): raise ValueError('引数は二重配列にしてください。')
+        if isinstance(rows, list) < 1: raise ValueError('要素がありません。引数の配列に1つ以上要素を加えてください。')
+#        if not isinstance(rows[0], self.RowType): raise ValueError('型が不正です。要素の型はDsvFile.RowTypeで取得した型にしてください。')
+        with open(self.Path, mode='w', encoding=self.Encoding, newline='') as f:
+            f.write(f'{self.Delimiter.join(self.Names)}{os.linesep}')
+            for row in rows:
+                f.write(f'{self.Delimiter.join([str(c) for c in row])}{os.linesep}')
 
 class TypedDsvFile(DsvFileReader):
     def __init__(self, path, delimiter, header_line_num):
@@ -222,21 +239,23 @@ class TypedDsvFile(DsvFileReader):
                 if all([v(getattr(r, k)) if callable(v) else getattr(r, k) == v for k,v in kwargs.items()]):
                     selecteds.append(r)
             return selecteds
+    def write(self, rows):
+        if not isinstance(rows, list): raise ValueError('引数は二重配列にしてください。')
+        if isinstance(rows, list) < 1: raise ValueError('要素がありません。引数の配列に1つ以上要素を加えてください。')
+#        if not isinstance(rows[0], self.RowType): raise ValueError('型が不正です。要素の型はDsvFile.RowTypeで取得した型にしてください。')
+        with open(self.Path, mode='w', encoding=self.Encoding, newline='') as f:
+            f.write(f'{self.Delimiter.join(self.Names)}{os.linesep}')
+            f.write(f'{self.Delimiter.join(self.Types)}{os.linesep}')
+            for row in rows:
+                f.write(f'{self.Delimiter.join([str(c) for c in row])}{os.linesep}')
 
 class CsvFile(DsvFile):
     def __init__(self, path, header_line_num=0):
-        super(path, ',', header_line_num=header_line_num)
-    def read(self):
-        pass
-    def write(self, content):
-        super().write(content)
-class TsvFile(File):
+        super.__init__(path, ',', header_line_num=header_line_num)
+class TsvFile(DsvFile):
     def __init__(self, path, header_line_num=0):
-        super(path, '\t', header_line_num=header_line_num)
-    def read(self):
-        pass
-    def write(self, content):
-        super().write(content)
+        super.__init__(path, '\t', header_line_num=header_line_num)
+
 class JsonFile(File):
     def read(self):
         pass
