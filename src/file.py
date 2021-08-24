@@ -181,10 +181,8 @@ class ListedDsvFile(DsvFileReader):
             return selecteds
     def write(self, rows):
         super().write(rows)
-        if not isinstance(rows[0], list): raise ValueError('引数は二重配列にしてください。')
         with open(self.Path, mode='w', encoding=self.Encoding, newline='') as f:
-            for row in rows:
-                f.write(f'{self.Delimiter.join([str(c) for c in row])}{os.linesep}')
+            f.writelines([f'{self.Delimiter.join([str(c) for c in row])}{os.linesep}' for row in rows])
 
 class NamedDsvFile(DsvFileReader):
     def __init__(self, path, delimiter, header_line_num):
@@ -214,8 +212,7 @@ class NamedDsvFile(DsvFileReader):
         super().write(rows)
         with open(self.Path, mode='w', encoding=self.Encoding, newline='') as f:
             f.write(f'{self.Delimiter.join(self.Names)}{os.linesep}')
-            for row in rows:
-                f.write(f'{self.Delimiter.join([str(c) for c in row])}{os.linesep}')
+            f.writelines([f'{self.Delimiter.join([str(c) for c in row])}{os.linesep}' for row in rows])
 
 class TypedDsvFile(DsvFileReader):
     def __init__(self, path, delimiter, header_line_num):
@@ -244,8 +241,7 @@ class TypedDsvFile(DsvFileReader):
         with open(self.Path, mode='w', encoding=self.Encoding, newline='') as f:
             f.write(f'{self.Delimiter.join(self.Names)}{os.linesep}')
             f.write(f'{self.Delimiter.join(self.Types)}{os.linesep}')
-            for row in rows:
-                f.write(f'{self.Delimiter.join([str(c) for c in row])}{os.linesep}')
+            f.writelines([f'{self.Delimiter.join([str(c) for c in row])}{os.linesep}' for row in rows])
 
 class CsvFile(DsvFile):
     def __init__(self, path, header_line_num=0):
