@@ -327,5 +327,68 @@ Suzuki	22''')
         self.assertEqual(f.Types, ['str','int'])
         self.assertEqual(actual, [['Yamada', '10'],['Suzuki', '22']])
 
+    def test_select_0(self):
+        p = pathlib.Path('/tmp/a.tsv')
+        p.write_text('''Yamada	10
+Suzuki	22
+Tanaka	35''')
+        f = DsvFile(p, '	')
+        actual = f.select('Suzuki')
+        self.assertEqual(f.Names, [])
+        self.assertEqual(f.Types, [])
+        self.assertEqual(actual, [['Suzuki', '22']])
+    def test_select_0_pos(self):
+        p = pathlib.Path('/tmp/a.tsv')
+        p.write_text('''Yamada	10
+Suzuki	22
+Tanaka	35''')
+        f = DsvFile(p, '	')
+        actual = f.select(None, '22')
+        self.assertEqual(f.Names, [])
+        self.assertEqual(f.Types, [])
+        self.assertEqual(actual, [['Suzuki', '22']])
+    def test_select_0_num(self):
+        p = pathlib.Path('/tmp/a.tsv')
+        p.write_text('''name	age
+str	int
+Yamada	10
+Suzuki	22
+Tanaka	35''')
+        f = DsvFile(p, '	', header_line_num=2)
+        actual = f.select(age=22)
+        self.assertEqual(f.Names, ['name','age'])
+        self.assertEqual(f.Types, ['str','int'])
+        self.assertEqual(actual, [f.RowType('Suzuki', 22)])
+    def test_select_0_num_callable(self):
+        p = pathlib.Path('/tmp/a.tsv')
+        p.write_text('''name	age
+str	int
+Yamada	10
+Suzuki	22
+Tanaka	35''')
+        f = DsvFile(p, '	', header_line_num=2)
+        actual = f.select(age=lambda x: 22 <= x)
+        self.assertEqual(f.Names, ['name','age'])
+        self.assertEqual(f.Types, ['str','int'])
+        self.assertEqual(actual, [f.RowType('Suzuki', 22), f.RowType('Tanaka', 35)])
+
+
+
+
+    """
+    def test_select_0(self):
+        p = pathlib.Path('/tmp/a.tsv')
+        p.write_text('''name	age
+str	int
+Yamada	10
+Suzuki	22
+Tanaka	35''')
+        f = DsvFile(p, '	', header_line_num=2)
+        actual = f.select()
+        self.assertEqual(f.Names, ['name','age'])
+        self.assertEqual(f.Types, ['str','int'])
+        self.assertEqual(list(actual), [{'name': 'Yamada', 'age': 10},{'name': 'Suzuki', 'age': 22}])
+    """
+
 if __name__ == "__main__":
     unittest.main()

@@ -138,11 +138,13 @@ class DsvFile(File):
             selecteds = []
             for row in reader:
                 if self.Names:
-                    r = [T(*c) for c in row]
-                    if all([getattr(r, k) == v for k,v in kwargs.items()]):
+                    r = T(*[self.__cast(i,c) for i,c in enumerate(row)]) if self.Types else rows.append(T(*row))
+#                    if all([getattr(r, k) == v for k,v in kwargs.items()]):
+                    if all([v(getattr(r, k)) if callable(v) else getattr(r, k) == v for k,v in kwargs.items()]):
                         selecteds.append(r)
                 else:
-                    if all([row[i] == a[i] for i,a in enumerate(args)]):
+#                    if all([row[i] == a for i,a in enumerate(args)]):
+                    if all([True if a is None else row[i] == a for i,a in enumerate(args)]):
                         selecteds.append(row)
             return selecteds
     def read_to_list(self):
