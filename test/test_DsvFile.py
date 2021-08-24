@@ -327,7 +327,7 @@ Suzuki	22''')
         self.assertEqual(f.Types, ['str','int'])
         self.assertEqual(actual, [['Yamada', '10'],['Suzuki', '22']])
 
-    def test_select_0(self):
+    def test_select_list_pos_1(self):
         p = pathlib.Path('/tmp/a.tsv')
         p.write_text('''Yamada	10
 Suzuki	22
@@ -337,7 +337,7 @@ Tanaka	35''')
         self.assertEqual(f.Names, [])
         self.assertEqual(f.Types, [])
         self.assertEqual(actual, [['Suzuki', '22']])
-    def test_select_0_pos(self):
+    def test_select_list_pos_2(self):
         p = pathlib.Path('/tmp/a.tsv')
         p.write_text('''Yamada	10
 Suzuki	22
@@ -347,7 +347,19 @@ Tanaka	35''')
         self.assertEqual(f.Names, [])
         self.assertEqual(f.Types, [])
         self.assertEqual(actual, [['Suzuki', '22']])
-    def test_select_0_num(self):
+    def test_select_typed_str(self):
+        p = pathlib.Path('/tmp/a.tsv')
+        p.write_text('''name	age
+str	int
+Yamada	10
+Suzuki	22
+Tanaka	35''')
+        f = DsvFile(p, '	', header_line_num=2)
+        actual = f.select(name='Suzuki')
+        self.assertEqual(f.Names, ['name','age'])
+        self.assertEqual(f.Types, ['str','int'])
+        self.assertEqual(actual, [f.RowType('Suzuki', 22)])
+    def test_select_typed_int(self):
         p = pathlib.Path('/tmp/a.tsv')
         p.write_text('''name	age
 str	int
@@ -359,7 +371,41 @@ Tanaka	35''')
         self.assertEqual(f.Names, ['name','age'])
         self.assertEqual(f.Types, ['str','int'])
         self.assertEqual(actual, [f.RowType('Suzuki', 22)])
-    def test_select_0_num_callable(self):
+    def test_select_named_callable_str(self):
+        p = pathlib.Path('/tmp/a.tsv')
+        p.write_text('''name	age
+Yamada	10
+Suzuki	22
+Tanaka	35''')
+        f = DsvFile(p, '	', header_line_num=1)
+        actual = f.select(name=lambda x: 'Suzuki' == x)
+        self.assertEqual(f.Names, ['name','age'])
+        self.assertEqual(f.Types, [])
+        self.assertEqual(actual, [f.RowType('Suzuki', '22')])
+    def test_select_named_callable_int(self):
+        p = pathlib.Path('/tmp/a.tsv')
+        p.write_text('''name	age
+Yamada	10
+Suzuki	22
+Tanaka	35''')
+        f = DsvFile(p, '	', header_line_num=1)
+        actual = f.select(age=lambda x: '22' == x)
+        self.assertEqual(f.Names, ['name','age'])
+        self.assertEqual(f.Types, [])
+        self.assertEqual(actual, [f.RowType('Suzuki', '22')])
+    def test_select_typed_callable_str(self):
+        p = pathlib.Path('/tmp/a.tsv')
+        p.write_text('''name	age
+str	int
+Yamada	10
+Suzuki	22
+Tanaka	35''')
+        f = DsvFile(p, '	', header_line_num=2)
+        actual = f.select(name=lambda x: 'Suzuki' == x)
+        self.assertEqual(f.Names, ['name','age'])
+        self.assertEqual(f.Types, ['str','int'])
+        self.assertEqual(actual, [f.RowType('Suzuki', 22)])
+    def test_select_typed_callable_int(self):
         p = pathlib.Path('/tmp/a.tsv')
         p.write_text('''name	age
 str	int
