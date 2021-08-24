@@ -107,22 +107,59 @@ class DsvFile(File):
     def Names(self, v): self.__names = v
     @property
     def Types(self): return self.__types
-    @Names.setter
+    @Types.setter
     def Types(self, v): self.__types = v
     @property
     def RowType(self): return self.__row_type
+    def __read_header(self, f):
+        reader = csv.reader(f, delimiter=self.Delimiter)
+        if 0 < self.__header_line_num: self.Names = next(reader)
+        if 1 < self.__header_line_num: self.Types = next(reader)
+        return reader
+#    def __read_rows(self, reader): return list(reader)
+##            return list(rows)
+    def read(self):
+        with open(self.Path, mode='r', encoding=self.Encoding) as f:
+            reader = self.__read_header(f)
+            print(f'R2:{self.__header_line_num} {self.Names} {self.Types}')
+            if not self.Names: return list(reader)
+            self.__row_type = T = namedtuple('Row', ' '.join(self.Names))
+            print(T, self.Names)
+            rows = []
+            for row in reader:
+                if not self.Types:
+                    rows.append(T(*row))
+                    continue
+                else:
+                    rows.append(T(*[eval(f'{self.Types[i]}("{c}")') for i,c in enumerate(row)]))
+#                for i, c in enumerate(row):
+#                    rows.append(T(*[eval(f'{self.Types[i]}("{c}")') for i,c in enumerate(row)]))
+            return rows
+    def select(self, *args, **kwargs):
+        with open(self.Path, mode='r', encoding=self.Encoding) as f:
+            reader = self.__read_header(f)
+            if self.Names: self.__row_type = T = namedtuple('CsvRow', ' '.join(self.Names))
+            selecteds = []
+            for row in reader:
+                if self.Names:
+                    r = [T(*c) for c in row]
+                    if all([getattr(r, k) == v for k,v in kwargs.items()]):
+                        selecteds.append(r)
+                else:
+                    if all([row[i] == a[i] for i,a in enumerate(args)]):
+                        selecteds.append(row)
+            return selecteds
+    """
     def read(self):
         with open(self.Path, mode='r', encoding=self.Encoding) as f:
             reader = csv.reader(f, delimiter=self.Delimiter)
-            print(f'R1:{self.__header_line_num}')
             if 0 < self.__header_line_num: self.Names = next(reader)
             if 1 < self.__header_line_num: self.Types = next(reader)
             print(f'R2:{self.__header_line_num} {self.Names} {self.Types}')
-#            if 0 < self.__header_line_num: self.Names = list(next(reader))
-#            if 1 < self.__header_line_num: self.Types = list(next(reader))
             return list(reader)
 #            for row in reader: yield row
 #            return list(rows)
+    """
     def read_to_namedtuple(self):
         with open(self.Path, mode='r', encoding=self.Encoding) as f:
             reader = csv.reader(f, delimiter=self.Delimiter)
@@ -154,12 +191,16 @@ class DsvFile(File):
         super().write(content)
         rows = csv.write(delimiter=self.Delimiter)
 
-class CsvFile(File):
+class CsvFile(DsvFile):
+    def __init__(self, path, header_line_num=0):
+        super(path, ',', header_line_num=header_line_num)
     def read(self):
         pass
     def write(self, content):
         super().write(content)
 class TsvFile(File):
+    def __init__(self, path, header_line_num=0):
+        super(path, '\t', header_line_num=header_line_num)
     def read(self):
         pass
     def write(self, content):

@@ -74,9 +74,15 @@ Suzuki	22
 Tanaka	35''')
         f = DsvFile(p, '	', header_line_num=1)
         actual = f.read()
+        expected = [
+            f.RowType('Yamada','10'),
+            f.RowType('Suzuki','22'),
+            f.RowType('Tanaka','35'),
+        ]
         self.assertEqual(f.Names, ['name', 'age'])
         self.assertEqual(f.Types, [])
-        self.assertEqual(list(actual), [['Yamada','10'],['Suzuki','22'],['Tanaka','35']])
+        self.assertEqual(list(actual), expected)
+#        self.assertEqual(list(actual), [['Yamada','10'],['Suzuki','22'],['Tanaka','35']])
     def test_read_has_names_and_types(self):
         p = pathlib.Path('/tmp/a.tsv')
         p.write_text('''name	age
@@ -86,9 +92,15 @@ Suzuki	22
 Tanaka	35''')
         f = DsvFile(p, '	', header_line_num=2)
         actual = f.read()
+        expected = [
+            f.RowType('Yamada',10),
+            f.RowType('Suzuki',22),
+            f.RowType('Tanaka',35),
+        ]
         self.assertEqual(f.Names, ['name', 'age'])
         self.assertEqual(f.Types, ['str', 'int'])
-        self.assertEqual(list(actual), [['Yamada','10'],['Suzuki','22'],['Tanaka','35']])
+        self.assertEqual(list(actual), expected)
+#        self.assertEqual(list(actual), [['Yamada','10'],['Suzuki','22'],['Tanaka','35']])
     """
     """
 
