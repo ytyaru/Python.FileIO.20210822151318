@@ -157,7 +157,11 @@ class DsvFileReader(File):
     def cast(self, i, c):
         return eval(f'{self.Types[i]}("{c}")', globals(), locals())
     def read(self): pass
-    def write(self): pass
+    def write(self, rows):
+        if not isinstance(rows, list): raise ValueError('引数は二重配列にしてください。')
+        if len(rows) < 1: raise ValueError('要素がありません。引数の配列に1つ以上要素を加えてください。')
+        if len(rows[0]) < 1: raise ValueError('要素がありません。引数の配列に1つ以上要素を加えてください。')
+
 class ListedDsvFile(DsvFileReader):
     def __init__(self, path, delimiter, header_line_num=0):
         super().__init__(path, delimiter, header_line_num)
@@ -176,9 +180,7 @@ class ListedDsvFile(DsvFileReader):
                     selecteds.append(row)
             return selecteds
     def write(self, rows):
-        if not isinstance(rows, list): raise ValueError('引数は二重配列にしてください。')
-        if isinstance(rows, list) < 1: raise ValueError('要素がありません。引数の配列に1つ以上要素を加えてください。')
-#        if len(rows[0]) != len(self.Names)):
+        super().write(rows)
         if not isinstance(rows[0], list): raise ValueError('引数は二重配列にしてください。')
         with open(self.Path, mode='w', encoding=self.Encoding, newline='') as f:
             for row in rows:
@@ -209,9 +211,7 @@ class NamedDsvFile(DsvFileReader):
                     selecteds.append(r)
             return selecteds
     def write(self, rows):
-        if not isinstance(rows, list): raise ValueError('引数は二重配列にしてください。')
-        if isinstance(rows, list) < 1: raise ValueError('要素がありません。引数の配列に1つ以上要素を加えてください。')
-#        if not isinstance(rows[0], self.RowType): raise ValueError('型が不正です。要素の型はDsvFile.RowTypeで取得した型にしてください。')
+        super().write(rows)
         with open(self.Path, mode='w', encoding=self.Encoding, newline='') as f:
             f.write(f'{self.Delimiter.join(self.Names)}{os.linesep}')
             for row in rows:
@@ -240,9 +240,7 @@ class TypedDsvFile(DsvFileReader):
                     selecteds.append(r)
             return selecteds
     def write(self, rows):
-        if not isinstance(rows, list): raise ValueError('引数は二重配列にしてください。')
-        if isinstance(rows, list) < 1: raise ValueError('要素がありません。引数の配列に1つ以上要素を加えてください。')
-#        if not isinstance(rows[0], self.RowType): raise ValueError('型が不正です。要素の型はDsvFile.RowTypeで取得した型にしてください。')
+        super().write(rows)
         with open(self.Path, mode='w', encoding=self.Encoding, newline='') as f:
             f.write(f'{self.Delimiter.join(self.Names)}{os.linesep}')
             f.write(f'{self.Delimiter.join(self.Types)}{os.linesep}')

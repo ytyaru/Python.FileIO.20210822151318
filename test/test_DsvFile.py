@@ -439,6 +439,43 @@ Tanaka	35''')
         self.assertEqual(f.Types, ['str','int'])
         self.assertEqual(actual, [f.RowType('Suzuki', 22)])
 
+    def test_write_from_list_type_error(self):
+        p = pathlib.Path('/tmp/a.tsv')
+        rows = []
+        f = DsvFile(p, '	')
+        with self.assertRaises(ValueError, msg='引数は二重配列にしてください。'):
+            f.write(rows)
+    def test_write_from_list_len_error(self):
+        p = pathlib.Path('/tmp/a.tsv')
+        rows = [[]]
+        f = DsvFile(p, '	')
+        with self.assertRaises(ValueError, msg='要素がありません。引数の配列に1つ以上要素を加えてください。'):
+            f.write(rows)
+    def test_write_from_named_type_error(self):
+        p = pathlib.Path('/tmp/a.tsv')
+        rows = []
+        f = DsvFile(p, '	', 1)
+        with self.assertRaises(ValueError, msg='引数は二重配列にしてください。'):
+            f.write(rows)
+    def test_write_from_named_len_error(self):
+        p = pathlib.Path('/tmp/a.tsv')
+        rows = [[]]
+        f = DsvFile(p, '	', 1)
+        with self.assertRaises(ValueError, msg='要素がありません。引数の配列に1つ以上要素を加えてください。'):
+            f.write(rows)
+    def test_write_from_typed_type_error(self):
+        p = pathlib.Path('/tmp/a.tsv')
+        rows = []
+        f = DsvFile(p, '	', 2)
+        with self.assertRaises(ValueError, msg='引数は二重配列にしてください。'):
+            f.write(rows)
+    def test_write_from_typed_len_error(self):
+        p = pathlib.Path('/tmp/a.tsv')
+        rows = [[]]
+        f = DsvFile(p, '	', 2)
+        with self.assertRaises(ValueError, msg='要素がありません。引数の配列に1つ以上要素を加えてください。'):
+            f.write(rows)
+
     def test_write_from_list(self):
         p = pathlib.Path('/tmp/a.tsv')
         rows = [['Yamada', 10]]
@@ -456,6 +493,22 @@ Yamada	10''')
         rows.append(f.RowType('Sasaki', '44'))
         f.write(rows)
         self.assertEqual(f.read(), [f.RowType('Yamada', '10'),f.RowType('Kijima', '33'),f.RowType('Sasaki', '44')])
+
+    """
+    def test_write_from_dict_typed(self):
+        p = pathlib.Path('/tmp/a.tsv')
+        p.write_text('''name	age
+str	int
+Yamada	10''')
+        f = DsvFile(p, '	', header_line_num=2)
+        rows = f.read_to_dictlist()
+        self.assertEqual(f.read(), {'name':'Yamada', 'age':10})
+        rows.append({'name':'Kijima', 'age':33})
+        rows.append({'name':'Sasaki', 'age':44})
+        f.write(rows)
+        self.assertEqual(f.read(), [f.RowType('Yamada', 10),f.RowType('Kijima', 33),f.RowType('Sasaki', 44)])
+    """
+
     def test_write_from_namedtuple_typed(self):
         p = pathlib.Path('/tmp/a.tsv')
         p.write_text('''name	age
