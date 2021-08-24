@@ -184,21 +184,13 @@ class DsvFile(File):
                     yield T(*values)
     def read_to_dictlist(self):
         if self.__header_line_num < 1: raise ValueError('header_line_numが1より小さいです。1以上にしてください。')
-#        rows = self.read()
-#        if not self.Names: return rows
-#        print('*****************')
         dl = []
         with open(self.Path, mode='r', encoding=self.Encoding, newline='') as f:
             reader = self.__read_header(f)
             for r in reader:
                 if not self.Types: dl.append(dict([(self.Names[i], c) for i,c in enumerate(r)]))
                 else: dl.append(dict([(self.Names[i], self.__cast(i,c)) for i,c in enumerate(r)]))
-#            dl.append(dict([(self.Names[i], c) for i,c in enumerate(r)]))
-#            if not self.Types: dl.append(T(*row))
-#            else: dl.append(T(*[self.__cast(i,c) for i,c in enumerate(row)]))
-            return dl                     
-
-        return dl
+        return dl                     
     def write(self, content):
         super().write(content)
         rows = csv.write(delimiter=self.Delimiter)
