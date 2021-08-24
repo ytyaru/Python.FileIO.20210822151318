@@ -2,6 +2,7 @@
 # coding: utf8
 import os,sys,pathlib,inspect
 from collections import namedtuple
+import operator
 sys.path.append(str(pathlib.Path(__file__, '../../src').resolve()))
 from file import DsvFile
 import unittest
@@ -438,6 +439,59 @@ Tanaka	35''')
         self.assertEqual(f.Names, ['name','age'])
         self.assertEqual(f.Types, ['str','int'])
         self.assertEqual(actual, [f.RowType('Suzuki', 22)])
+
+    # これはアウト。なぜ？
+    """
+    def test_read_to_list_sorted(self):
+        p = pathlib.Path('/tmp/a.tsv')
+        p.write_text('''name	age
+str	int
+Suzuki	22
+Tanaka	35
+Yamada	10
+Suzuki	3''')
+        f = DsvFile(p, '	', header_line_num=2)
+        actual = f.read_to_list()
+#        actual = sorted(actual, key=lambda x: (x[0],x[1]))
+        actual = sorted(actual, key=operator.itemgetter(0, 1))
+        self.assertEqual(f.Names, ['name','age'])
+        self.assertEqual(f.Types, ['str','int'])
+        self.assertEqual(actual, [['Suzuki',3],
+                                  ['Suzuki',22],
+                                  ['Tanaka',35],
+                                  ['Yamada',10]])
+    """
+    def test_read_to_dict_sorted(self):
+        p = pathlib.Path('/tmp/a.tsv')
+        p.write_text('''name	age
+str	int
+Suzuki	22
+Tanaka	35
+Yamada	10
+Suzuki	3''')
+        f = DsvFile(p, '	', header_line_num=2)
+        actual = f.read_to_dictlist()
+        actual = sorted(actual, key=operator.itemgetter('name', 'age'))
+        self.assertEqual(f.Names, ['name','age'])
+        self.assertEqual(f.Types, ['str','int'])
+        self.assertEqual(actual, [{'name':'Suzuki', 'age':3},
+                                  {'name':'Suzuki', 'age':22},
+                                  {'name':'Tanaka', 'age':35},
+                                  {'name':'Yamada', 'age':10}])
+    def test_read_to_namedtuple_sorted(self):
+        p = pathlib.Path('/tmp/a.tsv')
+        p.write_text('''name	age
+str	int
+Suzuki	22
+Tanaka	35
+Yamada	10
+Suzuki	3''')
+        f = DsvFile(p, '	', header_line_num=2)
+        actual = f.read()
+        actual = sorted(actual, key=operator.attrgetter('name', 'age'))
+        self.assertEqual(f.Names, ['name','age'])
+        self.assertEqual(f.Types, ['str','int'])
+        self.assertEqual(actual, [f.RowType('Suzuki', 3),f.RowType('Suzuki', 22),f.RowType('Tanaka', 35),f.RowType('Yamada', 10)])
 
     def test_write_from_list_type_error(self):
         p = pathlib.Path('/tmp/a.tsv')
