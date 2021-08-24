@@ -130,8 +130,12 @@ str	int''')
         p = pathlib.Path('/tmp/a.tsv')
         p.write_text('''Yamada	10''')
         f = DsvFile(p, '	')
-        with self.assertRaisesRegex(ValueError, 'header_line_numが1より小さいです。1以上にしてください。'):
-            actual = f.read_to_dictlist()
+#        with self.assertRaisesRegex(ValueError, 'header_line_numが1より小さいです。1以上にしてください。'):
+#            actual = f.read_to_dictlist()
+        actual = f.read_to_dictlist()
+        self.assertEqual(f.Names, [])
+        self.assertEqual(f.Types, [])
+        self.assertEqual(list(actual), [['Yamada', '10']])
     def test_read_to_dictlist_header_only_1(self):
         p = pathlib.Path('/tmp/a.tsv')
         p.write_text('''name	age''')
@@ -192,8 +196,12 @@ Suzuki	22''')
         p = pathlib.Path('/tmp/a.tsv')
         p.write_text('''Yamada	10''')
         f = DsvFile(p, '	')
-        with self.assertRaisesRegex(ValueError, 'header_line_numが1より小さいです。1以上にしてください。'):
-            actual = f.read_to_namedtuple()
+#        with self.assertRaisesRegex(ValueError, 'header_line_numが1より小さいです。1以上にしてください。'):
+#            actual = f.read_to_namedtuple()
+        actual = f.read_to_namedtuple()
+        self.assertEqual(f.Names, [])
+        self.assertEqual(f.Types, [])
+        self.assertEqual(list(actual), [['Yamada','10']])
     def test_read_to_namedtuple_header_only_1(self):
         p = pathlib.Path('/tmp/a.tsv')
         p.write_text('''name	age''')
