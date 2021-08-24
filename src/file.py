@@ -143,6 +143,8 @@ class DsvFileReader(File):
     def Types(self): return self.__types
     @property
     def RowType(self): return self.__row_type
+    def open(self):# https://docs.python.org/ja/3/library/csv.html#id3
+        return open(self.Path, mode='r', encoding=self.Encoding, newline='') 
     def read_header(self, f):
         reader = csv.reader(f, delimiter=self.Delimiter)
         if 0 < self.__header_line_num:
@@ -156,16 +158,16 @@ class DsvFileReader(File):
     def read(self): pass
     def write(self): pass
 class ListedDsvFile(DsvFileReader):
-    def __init__(self, path, delimiter, header_line_num):
+    def __init__(self, path, delimiter, header_line_num=0):
         super().__init__(path, delimiter, header_line_num)
     def read(self):
-        with open(self.Path, mode='r', encoding=self.Encoding, newline='') as f:# https://docs.python.org/ja/3/library/csv.html#id3
+        with self.open() as f:
             return list(self.read_header(f))
     def read_to_list(self): return self.read()
     def read_to_dict(self): return self.read()
     def read_to_namedtuple(self): return self.read()
     def select(self, *args, **kwargs):
-        with open(self.Path, mode='r', encoding=self.Encoding, newline='') as f:
+        with self.open() as f:
             reader = self.read_header(f)
             selecteds = []
             for row in reader:
@@ -177,19 +179,19 @@ class NamedDsvFile(DsvFileReader):
     def __init__(self, path, delimiter, header_line_num):
         super().__init__(path, delimiter, header_line_num)
     def read(self):
-        with open(self.Path, mode='r', encoding=self.Encoding, newline='') as f:# https://docs.python.org/ja/3/library/csv.html#id3
+        with self.open() as f:
             return [self.RowType(*row) for row in self.read_header(f)]
     def read_to_list(self):
-        with open(self.Path, mode='r', encoding=self.Encoding, newline='') as f:# https://docs.python.org/ja/3/library/csv.html#id3
+        with self.open() as f:
             return list(self.read_header(f))
     def read_to_dict(self):
-        with open(self.Path, mode='r', encoding=self.Encoding, newline='') as f:# https://docs.python.org/ja/3/library/csv.html#id3
+        with self.open() as f:
             return [dict([(self.Names[i], c) for i,c in enumerate(r)]) for r in self.read_header(f)]
     def read_to_namedtuple(self):
-        with open(self.Path, mode='r', encoding=self.Encoding, newline='') as f:# https://docs.python.org/ja/3/library/csv.html#id3
+        with self.open() as f:
             return [self.RowType(*r) for r in self.read_header(f)]
     def select(self, *args, **kwargs):
-        with open(self.Path, mode='r', encoding=self.Encoding, newline='') as f:
+        with self.open() as f:
             reader = self.read_header(f)
             selecteds = []
             for row in reader:
@@ -203,16 +205,16 @@ class TypedDsvFile(DsvFileReader):
         super().__init__(path, delimiter, header_line_num)
     def read(self): return self.read_to_namedtuple()
     def read_to_list(self):
-        with open(self.Path, mode='r', encoding=self.Encoding, newline='') as f:# https://docs.python.org/ja/3/library/csv.html#id3
+        with self.open() as f:
             return list(self.read_header(f))
     def read_to_dict(self):
-        with open(self.Path, mode='r', encoding=self.Encoding, newline='') as f:# https://docs.python.org/ja/3/library/csv.html#id3
+        with self.open() as f:
             return [dict([(self.Names[i], self.cast(i,c)) for i,c in enumerate(r)]) for r in self.read_header(f)]
     def read_to_namedtuple(self):
-        with open(self.Path, mode='r', encoding=self.Encoding, newline='') as f:# https://docs.python.org/ja/3/library/csv.html#id3
+        with self.open() as f:
             return [self.RowType(*[self.cast(i,c) for i,c in enumerate(row)]) for row in self.read_header(f)]
     def select(self, *args, **kwargs):
-        with open(self.Path, mode='r', encoding=self.Encoding, newline='') as f:
+        with self.open() as f:
             reader = self.read_header(f)
             selecteds = []
             for row in reader:
