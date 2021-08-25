@@ -100,7 +100,7 @@ class LineTextFile(File):
 class DsvFile(File):
     def __init__(self, path, delimiter, header_line_num=0):
         super().__init__(path)
-        self.__header_line_num = header_line_num
+#        self.__header_line_num = header_line_num
         self.__reader = self.__create_reader(path, delimiter, header_line_num)
     def __create_reader(self, p, d, h):
         return TypedDsvFile(p, d, h) if 2 == h else \
@@ -131,8 +131,8 @@ class DsvFile(File):
 class DsvFileReader(File):
     def __init__(self, path, delimiter, header_line_num):
         super().__init__(path)
-        self.__delimiter = delimiter
         self.__header_line_num = header_line_num
+        self.__delimiter = delimiter
         self.__names = []
         self.__types = []
         self.__row_type = None
@@ -148,6 +148,7 @@ class DsvFileReader(File):
         return open(self.Path, mode='r', encoding=self.Encoding, newline='') 
     def read_header(self, f):
         reader = csv.reader(f, delimiter=self.Delimiter)
+        print(self.__header_line_num)
         if 0 < self.__header_line_num:
             self.__names = next(reader)
             self.__row_type = namedtuple('Row', ' '.join(self.Names))
@@ -245,10 +246,10 @@ class TypedDsvFile(DsvFileReader):
 
 class CsvFile(DsvFile):
     def __init__(self, path, header_line_num=0):
-        super.__init__(path, ',', header_line_num=header_line_num)
+        super().__init__(path, ',', header_line_num=header_line_num)
 class TsvFile(DsvFile):
     def __init__(self, path, header_line_num=0):
-        super.__init__(path, '\t', header_line_num=header_line_num)
+        super().__init__(path, '\t', header_line_num=header_line_num)
 
 class JsonFile(File):
     def read(self):
