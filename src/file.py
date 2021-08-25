@@ -262,7 +262,7 @@ class Directory(FileObject):
     def Exist(self): return os.path.isdir(self.Path)
     def make(self):
         this = pathlib.Path(self.Path)
-        if not this.is_dir(): parent.mkdir(parents=True)
+        if not this.is_dir(): parent.mkdir(parents=True, exist_ok=True)
 
 
 class Link(FileObject):
